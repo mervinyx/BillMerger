@@ -93,12 +93,35 @@
         transform: translateY(-1px);
         box-shadow: 0 8px 22px rgba(37, 99, 235, 0.25);
       }
-      .message {
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.75;
+      }
+      .status-banner {
         margin-top: 1.5rem;
-        padding: 0.9rem 1.2rem;
+        padding: 0.95rem 1.2rem;
         border-radius: 10px;
-        background: rgba(248, 113, 113, 0.12);
+        border-left: 4px solid transparent;
+        font-weight: 500;
+        transition: all 0.2s ease;
+      }
+      .status-banner--hidden {
+        display: none;
+      }
+      .status-banner--success {
+        background: rgba(74, 222, 128, 0.15);
+        color: #15803d;
+        border-left-color: #22c55e;
+      }
+      .status-banner--error {
+        background: rgba(248, 113, 113, 0.16);
         color: #b91c1c;
+        border-left-color: #f87171;
+      }
+      .status-banner--info {
+        background: rgba(59, 130, 246, 0.16);
+        color: #1d4ed8;
+        border-left-color: #3b82f6;
       }
       ul {
         padding-left: 1.2rem;
@@ -115,7 +138,7 @@
         <li>支付宝：登录账单导出 CSV（编码为 GBK，默认格式即可）。</li>
         <li>微信：在支付中心导出 Excel 明细（无需解压密码）。</li>
       </ul>
-      <form method="post" enctype="multipart/form-data">
+      <form id="mergeForm" method="post" action="/merge" enctype="multipart/form-data">
         <div>
           <label for="alipay">支付宝账单 (CSV)</label>
           <div class="file-upload">
@@ -146,9 +169,11 @@
         </div>
         <button type="submit">合并并下载</button>
       </form>
-      {% if message %}
-      <div class="message">{{ message }}</div>
-      {% endif %}
+      <div
+        id="statusBanner"
+        class="status-banner status-banner--hidden"
+        data-server-message="{{ message | default('') }}"
+      ></div>
     </main>
     <script>
       const uploads = document.querySelectorAll('.file-upload');
@@ -166,6 +191,91 @@
             nameBox.classList.remove('file-name--active');
           }
         });
+      });
+
+      const form = document.getElementById('mergeForm');
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const statusBanner = document.getElementById('statusBanner');
+      const defaultButtonText = submitBtn.textContent;
+
+      const setStatus = (type, text) => {
+        statusBanner.textContent = text;
+        statusBanner.className = `status-banner status-banner--${type}`;
+      };
+
+      const serverMessage = statusBanner.dataset.serverMessage;
+      if (serverMessage) {
+        setStatus('error', serverMessage);
+      }
+
+      const extractFilename = (disposition) => {
+        if (!disposition) return '';
+        const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+        if (utf8Match && utf8Match[1]) {
+          return decodeURIComponent(utf8Match[1]);
+        }
+        const match = disposition.match(/filename="?([^";]+)"?/i);
+        return match && match[1] ? match[1] : '';
+      };
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+        const alipaySelected = formData.get('alipay');
+        const wechatSelected = formData.get('wechat');
+        if (!alipaySelected || !wechatSelected || !alipaySelected.name || !wechatSelected.name) {
+          setStatus('error', '请先选择两份账单文件。');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = '合并中...';
+        setStatus('info', '正在上传并合并，请稍候...');
+
+        try {
+          const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            let errorMessage = '合并失败，请检查文件格式后重试。';
+            try {
+              const payload = await response.json();
+              if (payload && payload.error) {
+                errorMessage = payload.error;
+              }
+            } catch (err) {
+              // ignore json parsing failure
+            }
+            setStatus('error', errorMessage);
+            return;
+          }
+
+          const blob = await response.blob();
+          const disposition = response.headers.get('Content-Disposition');
+          let filename = extractFilename(disposition);
+          if (!filename) {
+            filename = `merged-statements-${Date.now()}.csv`;
+          }
+
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+
+          setStatus('success', '合并完成，文件已下载。');
+        } catch (error) {
+          setStatus('error', '网络异常，请稍后重试。');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = defaultButtonText;
+        }
       });
     </script>
   </body>
