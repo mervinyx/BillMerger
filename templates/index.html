@@ -14,28 +14,29 @@
         padding: 2rem;
         display: flex;
         justify-content: center;
-        background: linear-gradient(135deg, #f0f4ff, #fef6f9);
+        background: linear-gradient(135deg, #eef2ff, #fdf2f8);
         min-height: 100vh;
+        color: #1f2937;
       }
       main {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(6px);
+        background: rgba(255, 255, 255, 0.95);
         border-radius: 18px;
-        padding: 2rem 2.5rem;
-        width: min(520px, 90vw);
-        box-shadow: 0 10px 40px rgba(15, 23, 42, 0.12);
+        padding: 2.4rem 2.8rem;
+        width: min(520px, 92vw);
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
       }
       h1 {
         margin-top: 0;
-        font-size: 1.8rem;
+        font-size: 1.9rem;
       }
       p {
-        line-height: 1.6;
+        line-height: 1.7;
+        margin-bottom: 0.6rem;
       }
       form {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 1.6rem;
         margin-top: 2rem;
       }
       label {
@@ -43,8 +44,39 @@
         display: block;
         margin-bottom: 0.5rem;
       }
-      input[type="file"] {
-        width: 100%;
+      .file-upload {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        flex-wrap: wrap;
+      }
+      .file-upload input[type="file"] {
+        display: none;
+      }
+      .file-trigger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #1f2937;
+        color: #fff;
+        padding: 0.65rem 1.3rem;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .file-trigger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 22px rgba(31, 41, 55, 0.18);
+      }
+      .file-name {
+        min-width: 160px;
+        color: #4b5563;
+        font-size: 0.95rem;
+      }
+      .file-name--active {
+        color: #1f2937;
+        font-weight: 600;
       }
       button {
         background-color: #2563eb;
@@ -86,11 +118,31 @@
       <form method="post" enctype="multipart/form-data">
         <div>
           <label for="alipay">支付宝账单 (CSV)</label>
-          <input id="alipay" name="alipay" type="file" accept=".csv" required />
+          <div class="file-upload">
+            <input
+              id="alipay"
+              name="alipay"
+              type="file"
+              accept=".csv,text/csv,application/vnd.ms-excel"
+              required
+            />
+            <label class="file-trigger" for="alipay">选择文件</label>
+            <span class="file-name" data-placeholder="尚未选择文件">尚未选择文件</span>
+          </div>
         </div>
         <div>
-          <label for="wechat">微信账单 (XLSX)</label>
-          <input id="wechat" name="wechat" type="file" accept=".xls,.xlsx" required />
+          <label for="wechat">微信账单 (XLS / XLSX)</label>
+          <div class="file-upload">
+            <input
+              id="wechat"
+              name="wechat"
+              type="file"
+              accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              required
+            />
+            <label class="file-trigger" for="wechat">选择文件</label>
+            <span class="file-name" data-placeholder="尚未选择文件">尚未选择文件</span>
+          </div>
         </div>
         <button type="submit">合并并下载</button>
       </form>
@@ -98,5 +150,23 @@
       <div class="message">{{ message }}</div>
       {% endif %}
     </main>
+    <script>
+      const uploads = document.querySelectorAll('.file-upload');
+      uploads.forEach((wrap) => {
+        const input = wrap.querySelector('input[type="file"]');
+        const nameBox = wrap.querySelector('.file-name');
+        input.addEventListener('change', () => {
+          if (input.files && input.files.length) {
+            nameBox.textContent = input.files
+              .map((file) => file.name)
+              .join(', ');
+            nameBox.classList.add('file-name--active');
+          } else {
+            nameBox.textContent = nameBox.dataset.placeholder || '尚未选择文件';
+            nameBox.classList.remove('file-name--active');
+          }
+        });
+      });
+    </script>
   </body>
 </html>
