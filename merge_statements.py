@@ -57,7 +57,25 @@ def merge_statements(alipay_file: BinaryIO, wechat_file: BinaryIO) -> BytesIO:
 
 def _load_alipay(upload: BinaryIO) -> pd.DataFrame:
     upload.seek(0)
-    alipay = pd.read_csv(upload, encoding="gbk", skiprows=4, dtype=str)
+    raw_bytes = upload.read()
+    if not raw_bytes:
+        raise ValueError("支付宝账单为空，请重新上传")
+
+    def read_with(encodings: Iterable[str]) -> pd.DataFrame:
+        last_error: Exception | None = None
+        for enc in encodings:
+            try:
+                return pd.read_csv(
+                    BytesIO(raw_bytes), encoding=enc, skiprows=4, dtype=str
+                )
+            except UnicodeDecodeError as err:
+                last_error = err
+        if last_error:
+            raise ValueError("无法识别支付宝账单编码，请确认文件格式无误") from last_error
+        raise ValueError("无法解析支付宝账单编码")
+
+    alipay = read_with(("gbk", "gb18030", "utf-8-sig", "utf-8"))
+    upload.seek(0)
     if "Unnamed: 16" in alipay.columns and alipay["Unnamed: 16"].isna().all():
         alipay = alipay.drop(columns=["Unnamed: 16"])
 
