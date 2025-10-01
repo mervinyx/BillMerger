@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>账单合并工具</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 0;
+        padding: 2rem;
+        display: flex;
+        justify-content: center;
+        background: linear-gradient(135deg, #f0f4ff, #fef6f9);
+        min-height: 100vh;
+      }
+      main {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(6px);
+        border-radius: 18px;
+        padding: 2rem 2.5rem;
+        width: min(520px, 90vw);
+        box-shadow: 0 10px 40px rgba(15, 23, 42, 0.12);
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 1.8rem;
+      }
+      p {
+        line-height: 1.6;
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+      label {
+        font-weight: 600;
+        display: block;
+        margin-bottom: 0.5rem;
+      }
+      input[type="file"] {
+        width: 100%;
+      }
+      button {
+        background-color: #2563eb;
+        color: #fff;
+        border: none;
+        padding: 0.9rem 1.4rem;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 22px rgba(37, 99, 235, 0.25);
+      }
+      .message {
+        margin-top: 1.5rem;
+        padding: 0.9rem 1.2rem;
+        border-radius: 10px;
+        background: rgba(248, 113, 113, 0.12);
+        color: #b91c1c;
+      }
+      ul {
+        padding-left: 1.2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>微信 &amp; 支付宝账单合并</h1>
+      <p>
+        上传微信支付账单（Excel）与支付宝账单（CSV），系统将自动对齐字段并按时间排序，生成一份合并后的月度流水，供你下载保存。
+      </p>
+      <ul>
+        <li>支付宝：登录账单导出 CSV（编码为 GBK，默认格式即可）。</li>
+        <li>微信：在支付中心导出 Excel 明细（无需解压密码）。</li>
+      </ul>
+      <form method="post" enctype="multipart/form-data">
+        <div>
+          <label for="alipay">支付宝账单 (CSV)</label>
+          <input id="alipay" name="alipay" type="file" accept=".csv" required />
+        </div>
+        <div>
+          <label for="wechat">微信账单 (XLSX)</label>
+          <input id="wechat" name="wechat" type="file" accept=".xls,.xlsx" required />
+        </div>
+        <button type="submit">合并并下载</button>
+      </form>
+      {% if message %}
+      <div class="message">{{ message }}</div>
+      {% endif %}
+    </main>
+  </body>
+</html>
