@@ -253,6 +253,7 @@
             return;
           }
 
+          setStatus('success', '文件上传成功，正在生成合并结果...');
           const blob = await response.blob();
           const disposition = response.headers.get('Content-Disposition');
           let filename = extractFilename(disposition);
@@ -269,7 +270,7 @@
           link.remove();
           URL.revokeObjectURL(url);
 
-          setStatus('success', '合并完成，文件已下载。');
+          setStatus('success', '文件上传成功，合并完成，文件已下载。');
         } catch (error) {
           setStatus('error', '网络异常，请稍后重试。');
         } finally {
